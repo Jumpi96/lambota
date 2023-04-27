@@ -74,19 +74,6 @@ resource "aws_lambda_function" "lambdafunc" {
   }
 }
 
-resource "aws_lambda_function_url" "lambdafunc" {
-  function_name      = aws_lambda_function.lambdafunc.function_name
-  authorization_type = "NONE"
-
-  cors {
-    allow_credentials = true
-    allow_origins     = ["*"]
-    allow_methods     = ["*"]
-    allow_headers     = ["date", "keep-alive"]
-    expose_headers    = ["keep-alive", "date"]
-    max_age           = 86400
-  }
-}
 
 resource "aws_s3_bucket_notification" "api_trigger" {
   bucket = aws_s3_bucket.polly_transcribe_bucket.id
