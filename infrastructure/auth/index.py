@@ -4,9 +4,9 @@ import os
 
 def lambda_handler(event, context):
     s3_client = boto3.client('s3')
-    bucket_name = os.getenv("BUCKET_NAME")
-    body = json.loads(event.get("body"))
-    object_key = body.get("key")
+    bucket_name = os.getenv('BUCKET_NAME')
+    body = json.loads(event.get('body'))
+    object_key = body.get('key')
 
     presigned_post = s3_client.generate_presigned_post(
         Bucket=bucket_name,
@@ -16,6 +16,6 @@ def lambda_handler(event, context):
 
     return {
         'statusCode': 200,
-        'headers': {'Content-Type': 'application/json', "Access-Control-Allow-Origin" : "*"},
+        'headers': {'Content-Type': 'application/json'},
         'body': json.dumps(presigned_post)
     }
