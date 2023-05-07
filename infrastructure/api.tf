@@ -35,6 +35,17 @@ resource "aws_iam_policy" "api_lambda" {
       ],
       "Resource": "arn:aws:logs:*:*:*",
       "Effect": "Allow"
+    },
+    {
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject"
+      ],
+      "Effect": "Allow",
+      "Resource": [
+        "${aws_s3_bucket.polly_transcribe_bucket.arn}",
+        "${aws_s3_bucket.polly_transcribe_bucket.arn}/*"
+      ]
     }
   ]
 }
