@@ -29,7 +29,7 @@ def get_signed_url(filename: str):
 def upload_to_s3(client, file_path):
     try:
         client.upload_file(file_path, BUCKET_NAME, f"prompts/{file_path}")
-        print(f"File uploaded successfully to {BUCKET_NAME}/{file_path}")
+        os.remove(file_path)
     except Exception as e:
         print(f"Error uploading file to S3: {e}")
 
