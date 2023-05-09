@@ -4,14 +4,17 @@ import hashlib
 import boto3
 import requests
 import tempfile
+from configparser import ConfigParser
 from datetime import datetime
-from playsound import playsound
+
+config = ConfigParser()
+config.read('conf.ini')
 
 SIGNED_URL_API = "https://h7po4qxpq3acpdeirdqcduojju0kyedr.lambda-url.eu-central-1.on.aws/"
 BUCKET_NAME = "lambota-polly-transcribe"
 
-AWS_ACCESS_KEY_ID = "AKIA4YCULLWFDWHCARFK"
-AWS_SECRET_ACCESS_KEY = "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"
+AWS_ACCESS_KEY_ID = config.get('AWS', 'ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = config.get('AWS', 'SECRET_ACCESS_KEY')
 
 def record_audio(filename):
     print("Recording your message...")
