@@ -13,7 +13,8 @@ resource "aws_iam_policy" "cli_s3_put" {
       "Action": [
         "s3:PutObject*",
         "s3:GetObject",
-        "s3:ListBucket"
+        "s3:ListBucket",
+        "s3:DeleteObject"
       ],
       "Resource": [
         "${aws_s3_bucket.polly_transcribe_bucket.arn}",

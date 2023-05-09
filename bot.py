@@ -64,6 +64,13 @@ def play_audio_from_s3_with_backoff(s3, key, max_retries=5, initial_delay=10):
                 print("Reached the maximum number of retries. Giving up.")
                 break
 
+def clean_prompt_file_from_s3(s3, key):
+    try:
+        s3.delete_object(Bucket=BUCKET_NAME, Key=f"prompts/{key}")
+        print(f"Object '{key}' successfully deleted from bucket '{BUCKET_NAME}'")
+    except Exception as e:
+        print(f"Error deleting object '{key}' from bucket '{BUCKET_NAME}': {e}")
+
 def main():
     print("Hi! I am your bot teacher. Let's start practicing. Record your message: (cut with CTRL+C)")
     s3 = boto3.client(
@@ -80,6 +87,7 @@ def main():
 
         upload_to_s3(s3, audio_file)
         play_audio_from_s3_with_backoff(s3, f"response/{audio_file}")
+        clean_prompt_file_from_s3(s3, audio_file)
 
         print("Continue recording...  (cut with CTRL+C)")
 
