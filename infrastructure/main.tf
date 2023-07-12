@@ -22,9 +22,9 @@ provider "aws" {
 }
 
 provider "google" {
-  credentials = file("lambota-22d5e2f325e7.json")
+  credentials = file("lambota-gcp-09623d71c911.json")
 
-  project = "lambota"
+  project = "lambota-gcp"
   region  = "europe-west3"
   zone    = "europe-west3-c" 
 }

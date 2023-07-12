@@ -3,7 +3,6 @@ package application;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
@@ -12,24 +11,27 @@ import java.util.Base64;
 import java.util.Properties;
 import java.util.Scanner;
 
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
+
 
 public class App {
 
-    private static final String BUCKET_NAME = "lambota-polly-transcribe";
+    private static final String PROMPTS_BUCKET = "lambota-audio-prompts";
+    private static final String RESPONSES_BUCKET = "lambota-audio-responses";
 
     public static void main(String[] args) throws IOException {
-        Properties aws = new Properties();
-        aws.load(App.class.getResourceAsStream("/config/aws.properties"));
+        Properties gcp = new Properties();
+        gcp.load(App.class.getResourceAsStream("/config/gcp.properties"));
 
         System.out.println("Hi! I am your bot teacher. Let's start practicing. Record your message: (cut with CTRL+C)");
-        AmazonS3 s3 = new AmazonS3Client(new BasicAWSCredentials((String) aws.get("access_key_id"), (String) aws.get("secret_access_key")));
+
+        Storage storage = StorageOptions.newBuilder()
+                .setCredentials(GoogleCredentials.fromStream(App.class.getResourceAsStream("/config/gcp-key.json")))
+                .build()
+                .getService();
 
         Scanner scanner = new Scanner(System.in);
 
@@ -42,9 +44,9 @@ public class App {
             String audioFile = String.format("audio_%s_%s.mp3", timestamp, shortHash);
             recordAudio(audioFile);
 
-            uploadToS3(s3, audioFile);
-            playAudioFromS3WithBackoff(s3, String.format("response/%s", audioFile));
-            cleanPromptFileFromS3(s3, audioFile);
+            uploadToBucket(storage, audioFile);
+            playAudioFromBucketWithBackoff(storage, audioFile);
+            cleanPromptFileFromBucket(storage, audioFile);
 
             System.out.println("Continue recording... (cut with CTRL+C)");
         }
@@ -63,44 +65,47 @@ public class App {
         }
     }
 
-    private static void uploadToS3(AmazonS3 s3, String filePath) {
+    private static void uploadToBucket(Storage storage, String filePath) {
         try {
             File file = new File(filePath);
-            String key = String.format("prompts/%s", file.getName());
+            String key = file.getName();
 
-            PutObjectRequest request = new PutObjectRequest(BUCKET_NAME, key, file);
-            s3.putObject(request);
+            Blob blob = storage.get(PROMPTS_BUCKET, key);
+            if (blob != null) {
+                System.out.println("File already exists in the bucket. Skipping upload.");
+                file.delete();
+                return;
+            }
+
+            storage.create(Blob.newBuilder(PROMPTS_BUCKET, key).build(), Files.readAllBytes(file.toPath()));
             file.delete();
         } catch (Exception e) {
-            System.out.println("Error uploading file to S3: " + e.getMessage());
+            System.out.println("Error uploading file to bucket: " + e.getMessage());
         }
     }
 
-    private static void playAudioFromS3WithBackoff(AmazonS3 s3, String key) {
+    private static void playAudioFromBucketWithBackoff(Storage storage, String key) {
         int maxRetries = 5;
         int initialDelay = 10;
 
         for (int attempt = 0; attempt <= maxRetries; attempt++) {
             try {
-                ObjectMetadata objectMetadata = s3.getObjectMetadata(BUCKET_NAME, key);
-                if (objectMetadata != null) {
+                Blob blob = storage.get(RESPONSES_BUCKET, key);
+                if (blob != null) {
                     System.out.println("Playing audio response...");
 
-                    S3Object s3Object = s3.getObject(BUCKET_NAME, key);
-                    S3ObjectInputStream inputStream = s3Object.getObjectContent();
                     File tempFile = File.createTempFile("temp", ".mp3");
+                    blob.downloadTo(tempFile.toPath());
 
-                    Files.copy(inputStream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                     playAudio(tempFile.getAbsolutePath());
 
                     tempFile.delete();
-                    inputStream.close();
-                    s3Object.close();
+                    blob.delete();
 
                     System.out.println("Finished playing audio response!");
                     break;
                 } else {
-                    System.out.println("No audio file found in the S3 bucket");
+                    System.out.println("No audio file found in the bucket");
                     if (attempt < maxRetries) {
                         int sleepTime = initialDelay * (int) Math.pow(2, attempt);
                         System.out.println("Retrying in " + sleepTime + " seconds...");
@@ -127,12 +132,12 @@ public class App {
         }
     }
 
-    private static void cleanPromptFileFromS3(AmazonS3 s3, String key) {
+    private static void cleanPromptFileFromBucket(Storage storage, String key) {
         try {
-            s3.deleteObject(BUCKET_NAME, String.format("prompts/%s", key));
-            System.out.printf("Object '%s' successfully deleted from bucket '%s'%n", key, BUCKET_NAME);
+            storage.delete(PROMPTS_BUCKET, String.format("prompts/%s", key));
+            System.out.printf("Object '%s' successfully deleted from bucket '%s'%n", key, PROMPTS_BUCKET);
         } catch (Exception e) {
-            System.out.printf("Error deleting object '%s' from bucket '%s': %s%n", key, BUCKET_NAME, e.getMessage());
+            System.out.printf("Error deleting object '%s' from bucket '%s': %s%n", key, PROMPTS_BUCKET, e.getMessage());
         }
     }
 

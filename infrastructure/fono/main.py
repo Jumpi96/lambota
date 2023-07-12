@@ -7,7 +7,7 @@ from google.cloud import texttospeech
 from google.cloud import speech_v1p1beta1 as speech
 
 OPENAI_API = 'https://api.openai.com/v1/completions'
-RESPONSES_BUCKET = 'lambota-responses'
+RESPONSES_BUCKET = 'lambota-audio-responses'
 API_KEY = os.getenv("OPENAI_API_KEY")
 
 

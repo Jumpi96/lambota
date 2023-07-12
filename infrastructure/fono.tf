@@ -1,6 +1,6 @@
 resource "google_storage_bucket" "fono" {
-  name     = "lambota-function"
-  location      = "EU"
+  name     = "lambota-cloud-function"
+  location = "EU"
 }
 
 data "archive_file" "fono" {
