@@ -19,7 +19,18 @@ public class CloudStorageClient {
             .getService();
     }
 
-    public String uploadToBucket(String bucket, String filePath, boolean delete) {
+    // TODO: remove from here
+    public boolean removeFile(String filePath) {
+        try {
+            new File(filePath).delete();
+            return true;
+        } catch (Exception e) {
+            System.out.println("Error removing file: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public String uploadToBucket(String bucket, String filePath) {
         try {
             File file = new File(filePath);
             String key = file.getName();
@@ -32,9 +43,6 @@ public class CloudStorageClient {
             }
 
             storage.create(Blob.newBuilder(bucket, key).build(), Files.readAllBytes(file.toPath()));
-            if (delete) {
-                file.delete();
-            }
             return String.format("gs://%s/%s", bucket, key);
         } catch (Exception e) {
             System.out.println("Error uploading file to bucket: " + e.getMessage());

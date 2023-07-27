@@ -19,18 +19,24 @@ import java.util.Properties;
 public class Main {
     private JPanel rootPanel;
     private JButton spreektButton;
+    private JButton repeatButton;
     private String audioFile;
+    private String responseFile;
     private TargetDataLine targetDataLine;
     private static final String PROMPTS_BUCKET = "lambota-audio-prompts";
     private static final String RESPONSES_BUCKET = "lambota-audio-responses";
 
     private Properties gcp;
     private CloudStorageClient cloudStorageClient;
+    private SpeechToTextClient speechToTextClient;
 
     public Main() throws IOException {
         gcp = new Properties();
         gcp.load(Main.class.getResourceAsStream("/config/gcp.properties"));
         cloudStorageClient = new CloudStorageClient();
+        speechToTextClient = new SpeechToTextClient();
+
+        repeatButton.setEnabled(false);
         spreektButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
@@ -44,16 +50,23 @@ public class Main {
                     spreektButton.setText("Klik om te stoppen");
                 } else {
                     stopRecording();
-                    String uri = cloudStorageClient.uploadToBucket(PROMPTS_BUCKET, audioFile, false);
-                    String transcription = new SpeechToTextClient().transcribeAudio(uri);
+                    String uri = cloudStorageClient.uploadToBucket(PROMPTS_BUCKET, audioFile);
+                    String transcription = speechToTextClient.transcribeAudio(uri);
                     String response = new OpenAIClient().askOpenAI(gcp.getProperty("openai_key"), transcription);
-                    String responsePath = new TextToSpeechClient()
+                    responseFile = new TextToSpeechClient()
                             .synthesizeSpeechAndSaveToFile(response, String.format("res_%s", audioFile));
-                    new AudioPlayer().playAudio(responsePath);
-                    cloudStorageClient.uploadToBucket(RESPONSES_BUCKET, audioFile, true);
+                    repeatButton.setEnabled(true);
+                    new AudioPlayer().playAudio(responseFile);
+                    cloudStorageClient.uploadToBucket(RESPONSES_BUCKET, audioFile);
                     spreektButton.setText("Spreekt");
                     audioFile = null;
                 }
+            }
+        });
+        repeatButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                new AudioPlayer().playAudio(responseFile);
             }
         });
     }

@@ -3,14 +3,21 @@ package clients;
 import com.google.cloud.speech.v1p1beta1.*;
 
 public class SpeechToTextClient {
-    public static String transcribeAudio(String gcsUri) {
-        try {
-            SpeechClient client = SpeechClient.create();
 
+    private SpeechClient client;
+
+    public SpeechToTextClient() {
+        try {
+            client = SpeechClient.create();
+        } catch (Exception e) {
+            System.out.println("Error creating SpeechClient: " + e.getMessage());
+        }
+    }
+    public String transcribeAudio(String gcsUri) {
+        try {
             RecognitionAudio audio = RecognitionAudio.newBuilder().setUri(gcsUri).build();
 
             RecognitionConfig config = RecognitionConfig.newBuilder()
-                    //.setEncoding(RecognitionConfig.AudioEncoding.MP3)
                     .setLanguageCode("nl-NL")
                     .build();
 
