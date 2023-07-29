@@ -20,6 +20,8 @@ public class Main {
     private JPanel rootPanel;
     private JButton spreektButton;
     private JButton repeatButton;
+    private JTextArea writtenArea;
+    private JButton showWrittenButton;
     private String audioFile;
     private String responseFile;
     private TargetDataLine targetDataLine;
@@ -37,6 +39,7 @@ public class Main {
         speechToTextClient = new SpeechToTextClient();
 
         repeatButton.setEnabled(false);
+        writtenArea.setVisible(false);
         spreektButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
@@ -56,6 +59,7 @@ public class Main {
                     responseFile = new TextToSpeechClient()
                             .synthesizeSpeechAndSaveToFile(response, String.format("res_%s", audioFile));
                     repeatButton.setEnabled(true);
+                    setWrittenArea(transcription, response);
                     new AudioPlayer().playAudio(responseFile);
                     cloudStorageClient.uploadToBucket(RESPONSES_BUCKET, audioFile);
                     spreektButton.setText("Spreekt");
@@ -67,6 +71,12 @@ public class Main {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 new AudioPlayer().playAudio(responseFile);
+            }
+        });
+        showWrittenButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                writtenArea.setVisible(!writtenArea.isVisible());
             }
         });
     }
@@ -110,6 +120,10 @@ public class Main {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         frame.setVisible(true);
+    }
+
+    private void setWrittenArea(String prompt, String response) {
+        writtenArea.setText(String.format("Jij: %s\n\nLambota: %s", prompt, response));
     }
 
 }

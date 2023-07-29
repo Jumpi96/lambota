@@ -7,10 +7,18 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
 public class TextToSpeechClient {
-    public static String synthesizeSpeechAndSaveToFile(String text, String filePath) {
-        try {
-            com.google.cloud.texttospeech.v1.TextToSpeechClient client = com.google.cloud.texttospeech.v1.TextToSpeechClient.create();
+    private com.google.cloud.texttospeech.v1.TextToSpeechClient client;
 
+    public TextToSpeechClient() {
+        try {
+            client = com.google.cloud.texttospeech.v1.TextToSpeechClient.create();
+        }
+        catch (Exception e) {
+            System.out.println("Error creating TextToSpeechClient: " + e.getMessage());
+        }
+    }
+    public String synthesizeSpeechAndSaveToFile(String text, String filePath) {
+        try {
             SynthesisInput input = SynthesisInput.newBuilder().setText(text).build();
 
             VoiceSelectionParams voice = VoiceSelectionParams.newBuilder()

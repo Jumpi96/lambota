@@ -1,8 +1,6 @@
 package clients;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -12,13 +10,21 @@ import java.nio.charset.StandardCharsets;
 
 public class OpenAIClient {
 
-    private static final String API_ENDPOINT = "https://api.openai.com/v1/completions";
+    private static final String API_ENDPOINT = "https://api.openai.com/v1/chat/completions";
     public static String askOpenAI(String apiKey, String inputPrompt) {
         try {
             JsonObject data = new JsonObject();
-            data.addProperty("model", "text-davinci-003");
-            data.addProperty("prompt", "You're a Dutch teacher and you are practicing speaking with a student. Your answer should only be what the Dutch teacher answers. The student says: " + inputPrompt);
-            data.addProperty("max_tokens", 100);
+            data.addProperty("model", "gpt-3.5-turbo");
+            JsonArray messages = new JsonArray();
+            JsonObject systemMessage = new JsonObject();
+            systemMessage.addProperty("role", "system");
+            systemMessage.addProperty("content", "You're a Dutch teacher and you are practicing speaking with a student.");
+            messages.add(systemMessage);
+            JsonObject userMessage = new JsonObject();
+            userMessage.addProperty("role", "system");
+            userMessage.addProperty("content", inputPrompt);
+            messages.add(userMessage);
+            data.add("messages", messages);
 
             Gson gson = new Gson();
             String requestData = gson.toJson(data);
@@ -36,7 +42,7 @@ public class OpenAIClient {
             String responseBody = response.body();
 
             JsonObject responseJson = JsonParser.parseString(responseBody).getAsJsonObject();
-            return responseJson.getAsJsonArray("choices").get(0).getAsJsonObject().get("text").getAsString();
+            return responseJson.getAsJsonArray("choices").get(0).getAsJsonObject().get("message").getAsJsonObject().get("content").getAsString();
         } catch (Exception e) {
             System.out.println("Error occurred while querying OpenAI: " + e.getMessage());
             return "";
