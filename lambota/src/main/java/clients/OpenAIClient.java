@@ -11,14 +11,18 @@ import java.nio.charset.StandardCharsets;
 public class OpenAIClient {
 
     private static final String API_ENDPOINT = "https://api.openai.com/v1/chat/completions";
-    public static String askOpenAI(String apiKey, String inputPrompt) {
+    public static String askOpenAI(String apiKey, String inputPrompt, String context) {
         try {
+            String fullContext = "You're a Dutch teacher and you are practicing speaking with a student. Your responses should have a similar length to the student's comments.";
             JsonObject data = new JsonObject();
             data.addProperty("model", "gpt-3.5-turbo");
             JsonArray messages = new JsonArray();
             JsonObject systemMessage = new JsonObject();
             systemMessage.addProperty("role", "system");
-            systemMessage.addProperty("content", "You're a Dutch teacher and you are practicing speaking with a student.");
+            if (context != "") {
+                fullContext += ". The student adds context: " + context;
+            }
+            systemMessage.addProperty("content", fullContext);
             messages.add(systemMessage);
             JsonObject userMessage = new JsonObject();
             userMessage.addProperty("role", "system");

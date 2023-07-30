@@ -22,6 +22,7 @@ public class Main {
     private JButton repeatButton;
     private JTextArea writtenArea;
     private JButton showWrittenButton;
+    private JTextField contextText;
     private String audioFile;
     private String responseFile;
     private TargetDataLine targetDataLine;
@@ -43,6 +44,7 @@ public class Main {
         spreektButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
+                contextText.setEnabled(false);
                 if (audioFile == null) {
                     LocalDateTime now = LocalDateTime.now();
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
@@ -55,7 +57,7 @@ public class Main {
                     stopRecording();
                     String uri = cloudStorageClient.uploadToBucket(PROMPTS_BUCKET, audioFile);
                     String transcription = speechToTextClient.transcribeAudio(uri);
-                    String response = new OpenAIClient().askOpenAI(gcp.getProperty("openai_key"), transcription);
+                    String response = new OpenAIClient().askOpenAI(gcp.getProperty("openai_key"), transcription, contextText.getText());
                     responseFile = new TextToSpeechClient()
                             .synthesizeSpeechAndSaveToFile(response, String.format("res_%s", audioFile));
                     repeatButton.setEnabled(true);
