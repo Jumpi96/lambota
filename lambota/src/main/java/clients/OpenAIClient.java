@@ -1,6 +1,9 @@
 package clients;
 
+import com.google.api.client.json.Json;
 import com.google.gson.*;
+import entities.Conversation;
+import entities.Message;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -11,23 +14,20 @@ import java.nio.charset.StandardCharsets;
 public class OpenAIClient {
 
     private static final String API_ENDPOINT = "https://api.openai.com/v1/chat/completions";
-    public static String askOpenAI(String apiKey, String inputPrompt, String context) {
+    private static final String ROLE = "role";
+    private static final String CONTENT = "content";
+
+    public static String askOpenAI(String apiKey, Conversation conversation) {
         try {
-            String fullContext = "You're a Dutch teacher and you are practicing speaking with a student. Your responses should have a similar length to the student's comments.";
             JsonObject data = new JsonObject();
             data.addProperty("model", "gpt-3.5-turbo");
             JsonArray messages = new JsonArray();
-            JsonObject systemMessage = new JsonObject();
-            systemMessage.addProperty("role", "system");
-            if (context != "") {
-                fullContext += ". The student adds context: " + context;
+            for (Message message: conversation.getMessages()) {
+                JsonObject messageObject = new JsonObject();
+                messageObject.addProperty(ROLE, message.getRole());
+                messageObject.addProperty(CONTENT, message.getContent());
+                messages.add(messageObject);
             }
-            systemMessage.addProperty("content", fullContext);
-            messages.add(systemMessage);
-            JsonObject userMessage = new JsonObject();
-            userMessage.addProperty("role", "system");
-            userMessage.addProperty("content", inputPrompt);
-            messages.add(userMessage);
             data.add("messages", messages);
 
             Gson gson = new Gson();
