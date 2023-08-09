@@ -42,6 +42,9 @@ public class ConversationController {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
         String timestamp = now.format(formatter);
         String shortHash = HashGenerator.generateShortHash();
+        if (responseFile != null) {
+            cloudStorageClient.removeFile(responseFile);
+        }
         audioFile = String.format("audio_%s_%s.mp3", timestamp, shortHash);
         record();
     }
@@ -81,6 +84,7 @@ public class ConversationController {
         responseFile = new TextToSpeechClient()
                 .synthesizeSpeechAndSaveToFile(response, String.format("res_%s", audioFile));
 
+        cloudStorageClient.removeFile(audioFile);
         new AudioPlayer().playAudio(responseFile);
         cloudStorageClient.uploadToBucket(RESPONSES_BUCKET, audioFile);
         audioFile = null;
